@@ -1,0 +1,12 @@
+{
+  "name": "musicdl",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "musicdl": "./src/index.js"
+  },
+  
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  }
+}
