@@ -8,8 +8,8 @@
     "musicdl-npm": "./src/index.js"
   },
   "scripts": {
-    "build": "pkg . --targets node18-linux-x64 --output musicdl",
-    "build:win": "pkg . --targets node18-win-x64 --output musicdl.exe"
+    "build": "pkg . --targets node18-linux-x64 --output ./exe/musicdl",
+    "build:win": "pkg . --targets node18-win-x64 --output ./exe/musicdl.exe"
   },
   "pkg": {
     "assets": [

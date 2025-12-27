@@ -21,7 +21,7 @@ para utilizar a segunda forma devo exercuta o comando npm install -g na raiz do 
 ou ./musicdl.exe "url" "URL do video" "artista" [windows]
 
 para utilizar a terceira forma deve executar o comando **npm run build** para linux
-ou **npm run build:win** para windows na raiz do projeto
+ou **npm run build:win** para windows na raiz do projeto ou baixar o executavel da pasta exe/
 
 após isso só é necessário mover o arquivo do exercutável para a pasta desejada
 e abrir o terminal naquela pasta
