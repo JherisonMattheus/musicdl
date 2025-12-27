@@ -10,12 +10,22 @@ Este projeto utiliza as bibliotecas externas:
 
 Para mais detalhes, consulte o arquivo `LICENSE` na raiz do projeto.
 
-Há duas forma de utilizar:
+Há três forma de utilizar:
 **Primeira:** node ./src/index.js "url" "URL do video" "artista"
 
-**Segunda:** musicdl "url" "URL do video" "artista"
+**Segunda:** musicdl-npm "url" "URL do video" "artista"
 
 para utilizar a segunda forma devo exercuta o comando npm install -g na raiz do projeto, certifique de exercutar como administrador 
+
+**Terceiro:** ./musicdl "url" "URL do video" "artista" [linux] 
+ou ./musicdl.exe "url" "URL do video" "artista" [windows]
+
+para utilizar a terceira forma deve executar o comando **npm run build** para linux
+ou **npm run build:win** para windows na raiz do projeto
+
+após isso só é necessário mover o arquivo do exercutável para a pasta desejada
+e abrir o terminal naquela pasta
+
 
 **notas:**
 
@@ -35,4 +45,4 @@ o resultado será o seguinte: artista - Numb - Linkin Park
 
 por fim tbm é possivel utilizar os comandos da ferramenta yt-dlp
 
-digite: node ./src/index.js --help ou musicdl --help para ver os comandos
+digite: node ./src/index.js --help ou musicdl-npm --help para ver os comandos
