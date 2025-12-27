@@ -258,7 +258,7 @@ async function baixarMusica(url, artista) {
       "intro,music_offtopic",
       "--force-keyframes-at-cuts",
       "-o",
-      `${artista}/ %(title)s.%(ext)s`,
+      `${artista}/%(title)s.%(ext)s`,
       url,
     ],
     { cwd: pastaMusicas }

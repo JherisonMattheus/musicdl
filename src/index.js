@@ -222,7 +222,7 @@ async function baixarMusica(url, artista) {
         "--sponsorblock-remove", "intro,music_offtopic", // retira as partes desnecessárias como a intro do video
         "--force-keyframes-at-cuts", // garante que os cortes sejam precisos
 
-        "-o", `${artista}/ %(title)s.%(ext)s`,
+        "-o", `${artista}/%(title)s.%(ext)s`,
         url
     ],
     {
