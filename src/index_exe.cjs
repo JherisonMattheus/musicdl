@@ -13,6 +13,7 @@ const path = require("path");
 const fs = require("fs");
 const https = require("https");
 const os = require("os");
+const unzipper = require("unzipper");
 
 const rootDir = path.resolve(__dirname, "..");
 
@@ -25,7 +26,7 @@ const isWin = process.platform === "win32";
 // executados diretamente. Copiamos o conteúdo de `bin/` para um diretório
 // temporário e usamos os caminhos extraídos.
 if (process.pkg) {
-  const runtimeBinDir = path.join(os.tmpdir(), `musicdl-bin-${process.pid}`);
+  const runtimeBinDir = path.join(os.tmpdir(), "musicdl-bin");
 
   function copyRecursive(src, dest) {
     const stat = fs.statSync(src);
@@ -45,15 +46,17 @@ if (process.pkg) {
     }
   }
 
+  // Sempre usar runtimeBinDir quando empacotado, pois /snapshot é read-only
+  binDir = runtimeBinDir;
+
   try {
     const packagedBin = path.join(rootDir, "bin");
     if (fs.existsSync(packagedBin)) {
       copyRecursive(packagedBin, runtimeBinDir);
-      binDir = runtimeBinDir;
     }
   } catch (err) {
-    // se falhou, fallback para binDir empacotado
-    console.error("Falha ao extrair binários empacotados:", err.message);
+    // se falhou, continuamos pois binários serão baixados
+    // console.error("Falha ao extrair binários empacotados:", err.message);
   }
 }
 
@@ -108,75 +111,93 @@ function baixarffmpeg() {
       : "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz";
 
     const archive = path.join(binDir, isWin ? "ffmpeg.zip" : "ffmpeg.tar.xz");
-
     const file = fs.createWriteStream(archive);
 
-    https
-      .get(url, (res) => {
-        res.pipe(file);
-        file.on("finish", () => {
-          try {
-            if (isWin) {
-              execSync(`unzip -o "${archive}" -d "${ffmpegDir}"`);
+    function get(urlToGet) {
+      https
+        .get(urlToGet, (res) => {
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            // segue redirect
+            get(res.headers.location);
+          } else if (res.statusCode === 200) {
+            res.pipe(file);
+            file.on("finish", () => {
+              try {
+                if (isWin) {
+                  fs.createReadStream(archive)
+                    .pipe(unzipper.Extract({ path: ffmpegDir }))
+                    .on("close", () => {
+                      const extractedDir = fs
+                        .readdirSync(ffmpegDir)
+                        .find(
+                          (d) =>
+                            d.startsWith("ffmpeg") &&
+                            fs.statSync(path.join(ffmpegDir, d)).isDirectory()
+                        );
 
-              const extractedDir = fs
-                .readdirSync(ffmpegDir)
-                .find(
-                  (d) =>
-                    d.startsWith("ffmpeg") &&
-                    fs.statSync(path.join(ffmpegDir, d)).isDirectory()
-                );
+                      const binPath = path.join(ffmpegDir, extractedDir, "bin");
 
-              const binPath = path.join(ffmpegDir, extractedDir, "bin");
+                      fs.renameSync(
+                        path.join(binPath, "ffmpeg.exe"),
+                        path.join(ffmpegDir, "ffmpeg.exe")
+                      );
+                      fs.renameSync(
+                        path.join(binPath, "ffprobe.exe"),
+                        path.join(ffmpegDir, "ffprobe.exe")
+                      );
+                      fs.rmSync(path.join(ffmpegDir, extractedDir), {
+                        recursive: true,
+                        force: true,
+                      });
+                      fs.unlinkSync(archive);
+                      resolve();
+                    })
+                    .on("error", (err) => {
+                      fs.unlinkSync(archive);
+                      reject(err);
+                    });
+                } else {
+                  execSync(`tar -xf "${archive}" -C "${ffmpegDir}"`);
 
-              fs.renameSync(
-                path.join(binPath, "ffmpeg.exe"),
-                path.join(ffmpegDir, "ffmpeg.exe")
-              );
-              fs.renameSync(
-                path.join(binPath, "ffprobe.exe"),
-                path.join(ffmpegDir, "ffprobe.exe")
-              );
-              fs.rmSync(path.join(ffmpegDir, extractedDir), {
-                recursive: true,
-                force: true,
-              });
-            } else {
-              execSync(`tar -xf "${archive}" -C "${ffmpegDir}"`);
+                  const extractedDir = fs
+                    .readdirSync(ffmpegDir)
+                    .find(
+                      (d) =>
+                        d.startsWith("ffmpeg") &&
+                        fs.statSync(path.join(ffmpegDir, d)).isDirectory()
+                    );
 
-              const extractedDir = fs
-                .readdirSync(ffmpegDir)
-                .find(
-                  (d) =>
-                    d.startsWith("ffmpeg") &&
-                    fs.statSync(path.join(ffmpegDir, d)).isDirectory()
-                );
+                  const extractedPath = path.join(ffmpegDir, extractedDir);
 
-              const extractedPath = path.join(ffmpegDir, extractedDir);
+                  fs.renameSync(
+                    path.join(extractedPath, "ffmpeg"),
+                    path.join(ffmpegDir, "ffmpeg")
+                  );
+                  fs.renameSync(
+                    path.join(extractedPath, "ffprobe"),
+                    path.join(ffmpegDir, "ffprobe")
+                  );
 
-              fs.renameSync(
-                path.join(extractedPath, "ffmpeg"),
-                path.join(ffmpegDir, "ffmpeg")
-              );
-              fs.renameSync(
-                path.join(extractedPath, "ffprobe"),
-                path.join(ffmpegDir, "ffprobe")
-              );
+                  fs.chmodSync(path.join(ffmpegDir, "ffmpeg"), 0o755);
+                  fs.chmodSync(path.join(ffmpegDir, "ffprobe"), 0o755);
 
-              fs.chmodSync(path.join(ffmpegDir, "ffmpeg"), 0o755);
-              fs.chmodSync(path.join(ffmpegDir, "ffprobe"), 0o755);
-
-              fs.rmSync(extractedPath, { recursive: true, force: true });
-            }
-
-            fs.unlinkSync(archive);
-            resolve();
-          } catch (err) {
-            reject(err);
+                  fs.rmSync(extractedPath, { recursive: true, force: true });
+                  fs.unlinkSync(archive);
+                  resolve();
+                }
+              } catch (err) {
+                reject(err);
+              }
+            });
+            file.on("error", reject);
+          } else {
+            reject(new Error(`Download failed with status ${res.statusCode}`));
           }
-        });
-      })
-      .on("error", reject);
+        })
+        .on("error", reject);
+    }
+
+    get(url);
   });
 }
 

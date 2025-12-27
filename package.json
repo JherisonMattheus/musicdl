@@ -17,6 +17,7 @@
     ]
   },
   "devDependencies": {
-    "pkg": "^5.8.1"
+    "pkg": "^5.8.1",
+    "unzipper": "^0.10.14"
   }
 }

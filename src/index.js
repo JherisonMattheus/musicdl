@@ -13,6 +13,7 @@ import path from "path";
 import fs from "fs";
 import https from "https";
 import { fileURLToPath } from "url";
+import unzipper from "unzipper";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -83,32 +84,45 @@ function baixarffmpeg() {
 
         const file = fs.createWriteStream(archive);
 
-        https.get(
-            url,
+        function get(urlToGet) {
+            https.get(
+                urlToGet,
             res => {
-                res.pipe(file);
-                file.on("finish", () => {
-                    try {
-                        if(isWin) {
-                            execSync(`unzip -o "${archive}" -d "${ffmpegDir}"`);
+                if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+                    // segue redirect
+                    get(res.headers.location);
+                } else if (res.statusCode === 200) {
+                    res.pipe(file);
+                    file.on("finish", () => {
+                        try {
+                            if(isWin) {
+                            fs.createReadStream(archive)
+                                .pipe(unzipper.Extract({ path: ffmpegDir }))
+                                .on("close", () => {
+                                    const extractedDir = fs.readdirSync(ffmpegDir)
+                                        .find(d => d.startsWith("ffmpeg") && fs.statSync(path.join(ffmpegDir, d)).isDirectory());
 
-                            const extractedDir = fs.readdirSync(ffmpegDir)
-                                .find(d => d.startsWith("ffmpeg") && fs.statSync(path.join(ffmpegDir, d)).isDirectory());
+                                    const binPath = path.join(ffmpegDir, extractedDir, "bin");
 
-                            const binPath = path.join(ffmpegDir, extractedDir, "bin");
+                                    fs.renameSync(
+                                        path.join(binPath, "ffmpeg.exe"),
+                                        path.join(ffmpegDir, "ffmpeg.exe")
+                                    );
 
-                            fs.renameSync(
-                                path.join(binPath, "ffmpeg.exe"),
-                                path.join(ffmpegDir, "ffmpeg.exe")
-                            );
+                                    fs.renameSync(
+                                        path.join(binPath, "ffprobe.exe"),
+                                        path.join(ffmpegDir, "ffprobe.exe")
+                                    );
 
-                            fs.renameSync(
-                                path.join(binPath, "ffprobe.exe"),
-                                path.join(ffmpegDir, "ffprobe.exe")
-                            );
-
-                            // limpeza opcional
-                            fs.rmSync(path.join(ffmpegDir, extractedDir), { recursive: true, force: true });
+                                    // limpeza opcional
+                                    fs.rmSync(path.join(ffmpegDir, extractedDir), { recursive: true, force: true });
+                                    fs.unlinkSync(archive);
+                                    resolve();
+                                })
+                                .on("error", (err) => {
+                                    fs.unlinkSync(archive);
+                                    reject(err);
+                                });
                         } else {
                             execSync(`tar -xf "${archive}" -C "${ffmpegDir}"`);
 
@@ -131,17 +145,22 @@ function baixarffmpeg() {
                             fs.chmodSync(path.join(ffmpegDir, "ffprobe"), 0o755);
 
                             fs.rmSync(extractedPath, { recursive: true, force: true });
+                            fs.unlinkSync(archive);
+                            resolve();
                         }
-
-                        fs.unlinkSync(archive);
-                        resolve();
                     } catch (err) {
                         reject(err);
                     }
                 });
-            }
-        
-        ).on("error", reject);
+                        file.on("error", reject);
+                    } else {
+                        reject(new Error(`Download failed with status ${res.statusCode}`));
+                    }
+                }
+            ).on("error", reject);
+        }
+
+        get(url);
     });
 }
 
