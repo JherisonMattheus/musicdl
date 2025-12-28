@@ -14,6 +14,7 @@ Há três forma de utilizar:
 **Primeira:** node ./src/index.js "url" "URL do video" "artista"
 
 **Segunda:** musicdl-npm "url" "URL do video" "artista"
+         ou  musicdl "url" "URL do video" "artista"
 
 para utilizar a segunda forma devo exercuta o comando npm install -g na raiz do projeto, certifique de exercutar como administrador 
 
@@ -35,7 +36,7 @@ as variável "artista" deve ser igual a que estar no titulo do video
 
 ex: **titulo do video:** Numb - Linkin Park, **"artista":** "Linkin Park"
 
-não é obrigatório, entretanto é necessária para uma boa formatação
+não é obrigatório, entretanto é necessário para uma boa formatação
 
 usando o exemplo acima quando o video for baixado o titulo do arquivo vai ser alterado
 
