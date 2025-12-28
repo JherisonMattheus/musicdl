@@ -99,6 +99,7 @@ function padronizarNomeArquivo(nomeArquivo, artista) {
             console.log(musica);
             return `${artista} - ${musica}${ext}`;
         }
+      console.log(base);
       return nomeArquivo;
     }
 
