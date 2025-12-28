@@ -67,8 +67,12 @@ function padronizarNomeArquivo(nomeArquivo, artista) {
             return `${artista} - ${musica}${ext}`;
         }
       // já está correto
-      console.log(nomeArquivo);
-      return nomeArquivo;
+      const musica = base
+        .slice(base.lastIndexOf(dash) + dash.length)
+        .toLowerCase()
+        .replace(/(^|\s)\p{L}/gu, c => c.toUpperCase());
+      console.log(base);
+      return `${artista} - ${musica}${ext}`;
     }
 
     if (normBase.endsWith(dash + normArtista)) {
@@ -84,11 +88,11 @@ function padronizarNomeArquivo(nomeArquivo, artista) {
   }
 
   // não tem artista → prefixa
-  base
+  const musica = base
   .toLowerCase()
   .replace(/(^|\s)\p{L}/gu, c => c.toUpperCase());
   console.log(base);
-  return `${artista} - ${base}${ext}`;
+  return `${artista} - ${musica}${ext}`;
 }
 
 function baixarffmpeg() {
