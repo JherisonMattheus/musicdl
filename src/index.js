@@ -56,7 +56,7 @@ function padronizarNomeArquivo(nomeArquivo, artista) {
   const dashPatterns = [" - ", " – "];
 
   for (const dash of dashPatterns) {
-    if (normBase.startsWith(normArtista + dash) || !base.startsWith(artista) && base.includes(dash)) {
+    if (normBase.startsWith(normArtista + dash) || !base.startsWith(artista) && !normBase.endsWith(dash + normArtista)  && base.includes(dash)) {
         if (!base.startsWith(artista)) {
             const musica = base
               .slice(base.lastIndexOf(dash) + dash.length)
