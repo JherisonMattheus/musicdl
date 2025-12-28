@@ -67,17 +67,27 @@ function padronizarNomeArquivo(nomeArquivo, artista) {
             return `${artista} - ${musica}${ext}`;
         }
       // já está correto
+      console.log(nomeArquivo);
       return nomeArquivo;
     }
 
     if (normBase.endsWith(dash + normArtista)) {
       // inverter
-      const musica = base.slice(0, base.lastIndexOf(dash)).trim();
+      const musica = base
+        .slice(0, base.lastIndexOf(dash))
+        .trim()
+        .toLowerCase()
+        .replace(/(^|\s)\p{L}/gu, c => c.toUpperCase());
+      console.log(musica);
       return `${artista} - ${musica}${ext}`;
     }
   }
 
   // não tem artista → prefixa
+  base
+  .toLowerCase()
+  .replace(/(^|\s)\p{L}/gu, c => c.toUpperCase());
+  console.log(base);
   return `${artista} - ${base}${ext}`;
 }
 
