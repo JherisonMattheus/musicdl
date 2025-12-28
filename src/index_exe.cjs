@@ -89,7 +89,16 @@ function padronizarNomeArquivo(nomeArquivo, artista) {
   const dashPatterns = [" - ", " – "];
 
   for (const dash of dashPatterns) {
-    if (normBase.startsWith(normArtista + dash)) {
+    if (normBase.startsWith(normArtista + dash) || !base.startsWith(artista) && base.includes(dash)) {
+      if (!base.startsWith(artista)) {
+            const musica = base
+              .slice(base.lastIndexOf(dash) + dash.length)
+              .trim()
+              .toLowerCase()
+              .replace(/(^|\s)\p{L}/gu, c => c.toUpperCase());
+            console.log(musica)
+            return `${artista} - ${musica}${ext}`;
+        }
       return nomeArquivo;
     }
 
